@@ -18,7 +18,7 @@ this is a minimal implementation of the RAG model for question answering.
 ## Run the FastApi server
 
 ```bash
-uvicorn main:app --reload --host 0.0.0.0 --port 5000
+uvicorn mini_rag.main:app --reload --host 0.0.0.0 --port 5000
 ```
 
 

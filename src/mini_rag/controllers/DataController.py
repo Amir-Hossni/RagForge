@@ -22,7 +22,7 @@ class DataController(BaseController):
          
          return True , ResponseSignal.FILE_UPLOADE_SUCCSESS.value
      
-    def generate_unique_filename(self, original_file_name: str, project_id: str):
+    def generate_unique_path(self, original_file_name: str, project_id: str):
          
         random_key = self.generate_random_string()
         project_path = ProjectController().get_project_path(project_id=project_id)
@@ -35,15 +35,17 @@ class DataController(BaseController):
             random_key = self.generate_random_string()
             new_file_path = project_path / f"{random_key}_{cleaned_file_name}"
 
-        return new_file_path
+        return new_file_path , random_key + "_" + cleaned_file_name
     
     
          
     def get_clean_filename(self, original_file_name: str):
             
         #remove any special charcater, except underscor and .
-        cleaned_file_name = re.sub(r'[^\w]', '', original_file_name.strip())
+        cleaned_file_name = re.sub(r'[^\w\s.]', '', original_file_name.strip())
         
         #replace spaces with underscore
         cleaned_file_name = cleaned_file_name.replace(" ", "_")
+        
+        return cleaned_file_name
         

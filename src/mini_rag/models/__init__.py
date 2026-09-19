@@ -1,8 +1,11 @@
-from .enums.ResponseEnum import ResponseSignal
-from .enums.ProcessingEnum import ProcessingEnum
-from .enums.DataBaseEnum import DataBaseEnum
+from .enums import ResponseSignal
+from .enums import ProcessingEnum
+from .enums import DataBaseEnum
+from .enums import AssetTypeEnum
 
-from .db_schemes import Project, DataChunk
+
+from .db_schemes import Project, DataChunk , Asset
 from .BaseDataModel import BaseDataModel
 from .ProjectModel import ProjectModel
-from .ChunkModel import ChunkModel 
+from .ChunkModel import ChunkModel
+from .AssetModel import AssetModel   

@@ -38,9 +38,9 @@ class ProjectModel(BaseDataModel):
                         exclude_none=True
                     )
                 )
-        project_id = str(result.inserted_id)
+        project.id = result.inserted_id
 
-        return project_id
+        return project
         
                
     

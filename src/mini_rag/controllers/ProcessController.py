@@ -1,6 +1,7 @@
 from .BaseController import BaseController
-from . ProjectController import ProjectController
-import os
+from .ProjectController import ProjectController
+
+from pathlib import Path
 from langchain_community.document_loaders import TextLoader
 from langchain_community.document_loaders import PyMuPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -20,7 +21,7 @@ class ProcessController(BaseController):
 
     def get_file_extention(self, file_id: str):
         
-        return os.path.splitext(file_id)[-1]
+        return Path(file_id).suffix
     
     
     def get_file_loader(self, file_id: str):
@@ -28,6 +29,9 @@ class ProcessController(BaseController):
         file_ext = self.get_file_extention(file_id=file_id)
         file_path = self.project_path / file_id  
           
+        if not Path(file_path).exists():
+            return None  
+        
         if file_ext == ProcessingEnum.TXT.value:
             return TextLoader(file_path, encoding="utf-8")
           
@@ -40,7 +44,11 @@ class ProcessController(BaseController):
     def get_file_content(self,file_id: str ):
         
         loader = self.get_file_loader(file_id=file_id)
-        return loader.load()
+        if loader:
+            return loader.load()
+        
+        return None    
+    
     
     def process_file_contet(self, file_content: list, file_id: str,
                             chunk_size: int=00, overlap_size: int=20):

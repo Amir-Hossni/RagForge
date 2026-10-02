@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     MONGODB_DATABASE : str
     
     #LLM PROVIDERS     
-    GENEREATION_BACKEND : str=None
+    GENERATION_BACKEND : str=None
     EMBEDDING_BACKEND : str=None
 
     OPENAI_API_KEY : str=None
@@ -25,7 +25,7 @@ class Settings(BaseSettings):
 
     GENERATION_MODEL_ID : str=None
     EMBEDDING_MODEL_ID : str=None
-    EMBEDDING_MODEL_SYZE : int=None
+    EMBEDDING_MODEL_SIZE : int=None
 
     INPUT_DEFAULT_MAX_CHARACTERS : int=None
     GENERATION_DEFAULT_MAX_TOKENS : int=None

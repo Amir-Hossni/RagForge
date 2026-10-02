@@ -69,7 +69,7 @@ class OpenAiProvider(LLMinterface):
         )
         
         response = self.client.chat.completions.create(
-            modelm = self.generation_model_id,
+            model = self.generation_model_id,
             messages = chat_history,
             max_tokens = max_output_tokens,
             temperature = temperature

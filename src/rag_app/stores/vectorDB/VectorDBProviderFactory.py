@@ -1,6 +1,6 @@
 from .providers import QdrantDBProvider
-from .VectorDBEnums import VectorDBBEnums   
-from src.rag_app.controllers.BaseController import BaseController 
+from .VectorDBEnums import VectorDBEnums   
+from ...controllers.BaseController import BaseController 
 
 
 class VectorDBProviderFactory:
@@ -9,10 +9,10 @@ class VectorDBProviderFactory:
         self.config = config
         self.base_controller = BaseController()
         
-    def creater(self, provider: str):
+    def create(self, provider: str):
         
-        if provider == VectorDBBEnums.QDRANT.value:
-            db_path = self.base_controller.get_db_path(db_name=self.config.VECTOR_DB_NAME)
+        if provider == VectorDBEnums.QDRANT.value:
+            db_path = self.base_controller.get_db_path(db_name=self.config.VECTOR_DB_PATH)
             return QdrantDBProvider(
                                     db_path=db_path,
                 distance_metric=self.config.VECTOR_DB_DISTANCE_METRIC,      

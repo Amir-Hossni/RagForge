@@ -17,12 +17,12 @@ class VectorDBInterFace(ABC):
         pass
     
     @abstractmethod
-    def list_all_collections(self, collection_name: str) -> List:
+    def list_all_collections(self) -> List:
         pass
 
         
     @abstractmethod
-    def get_collection_info(self, collection_name: dict) -> dict:
+    def get_collection_info(self, collection_name: str):
         pass    
     
     
@@ -40,8 +40,8 @@ class VectorDBInterFace(ABC):
         pass
     
     @abstractmethod
-    def insert_many(self, collection_name: str, texts: str, vectors: list,
-                          metadata: dict = None, record_ids: str = None, batch_size: int = 50):   
+    def insert_many(self, collection_name: str, texts: List[str], vectors: list,
+                          metadata: list = None, record_ids: list = None, batch_size: int = 50):   
         pass
     
     @abstractmethod

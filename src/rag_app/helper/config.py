@@ -1,3 +1,5 @@
+from functools import lru_cache
+from typing import Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
@@ -5,7 +7,6 @@ class Settings(BaseSettings):
     
     APP_NAME : str
     APP_VERSION : str
-    OPENAI_API_KEY : str
 
     FILE_ALLOWED_TYPES : list[str]
     FILE_MAX_SIZE : int
@@ -15,33 +16,46 @@ class Settings(BaseSettings):
     MONGODB_DATABASE : str
     
     #LLM PROVIDERS     
-    GENERATION_BACKEND : str=None
-    EMBEDDING_BACKEND : str=None
+    GENERATION_BACKEND : Optional[str] = None
+    EMBEDDING_BACKEND : Optional[str] = None
 
-    OPENAI_API_KEY : str=None
-    OPENAI_API_URL : str=None
+    OPENAI_API_KEY : Optional[str] = None
+    OPENAI_API_URL : Optional[str] = None
 
-    COHERE__API_KEY : str=None
+    COHERE_API_KEY : Optional[str] = None
+    
+    ANTHROPIC_API_KEY : Optional[str] = None
+    GOOGLE_API_KEY : Optional[str] = None
+    
+    NVIDIA_API_KEY : Optional[str] = None
+    NVIDIA_API_URL : str = "https://integrate.api.nvidia.com/v1"
+    
+    OLLAMA_API_URL : str = "http://localhost:11434"
 
-    GENERATION_MODEL_ID : str=None
-    EMBEDDING_MODEL_ID : str=None
-    EMBEDDING_MODEL_SIZE : int=None
+    GENERATION_MODEL_ID : Optional[str] = None
+    EMBEDDING_MODEL_ID : Optional[str] = None
+    EMBEDDING_MODEL_SIZE : Optional[int] = None
 
-    INPUT_DEFAULT_MAX_CHARACTERS : int=None
-    GENERATION_DEFAULT_MAX_TOKENS : int=None
-    GENERATION_DEFAULT_TEMPERATURE : float=None
+    INPUT_DEFAULT_MAX_CHARACTERS : Optional[int] = None
+    GENERATION_DEFAULT_MAX_TOKENS : Optional[int] = None
+    GENERATION_DEFAULT_TEMPERATURE : Optional[float] = None
     
      
 
-    VECTOR_DB_BACKEND : str=None
-    VECTOR_DB_PATH : str=None
-    VECTOR_DB_DISTANCE_METRIC : str=None 
+    VECTOR_DB_BACKEND : Optional[str] = None
+    VECTOR_DB_PATH : Optional[str] = None
+    VECTOR_DB_DISTANCE_METRIC : Optional[str] = None 
+    
+    #URL LOADER
+    URL_REQUEST_TIMEOUT : int = 15
+    URL_MAX_REDIRECTS : int = 5
     
 
     
-    model_config = SettingsConfigDict(env_file=".env")
+    model_config = SettingsConfigDict(env_file=".env", env_ignore_empty=True)
         
         
+@lru_cache
 def get_settings():
     return  Settings()                          
 # class Settings(BaseSettings):

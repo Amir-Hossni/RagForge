@@ -1,110 +1,68 @@
-from openai import OpenAI
-import logging
+from openai import AsyncOpenAI
 
 from ..LLMinterface import LLMinterface
 from ..LLMEnums import OpenAIEnums
+from ..LLMErrors import LLMProviderError, EmbeddingError
 
 class OpenAiProvider(LLMinterface):
+    
+    PROVIDER_NAME = "OpenAI"
+    ROLES = OpenAIEnums
     
     def __init__(self, api_key: str, api_url: str=None, 
                  default_input_max_characters: int=1000,
                  default_generation_max_tokens: int=1000,
                  default_generation_temperature: float=0.1):
         
-        self.api_key = api_key
+        super().__init__(
+            api_key=api_key,
+            default_input_max_characters=default_input_max_characters,
+            default_generation_max_tokens=default_generation_max_tokens,
+            default_generation_temperature=default_generation_temperature
+        )
+        
         self.api_url = api_url
-        self.default_input_max_characters = default_input_max_characters
-        self.default_generation_max_tokens = default_generation_max_tokens
-        self.default_generation_temperature = default_generation_temperature
-
-        self.generation_model_id = None
         
-        self.embedding_model_id = None
-        self.embedding_size = None
+        # OpenAI accepts at most 2048 texts per embedding request
+        self.embedding_batch_size = 2048
         
-        self.client = OpenAI(
+        # async client, so waiting for the model does not block the FastAPI event loop
+        self.client = AsyncOpenAI(
             api_key = self.api_key,
-            api_url = self.api_url
+            base_url = self.api_url
         )
-        
-        self.logger =logging.getLogger(__name__)
-    
-    
-    def _process_text(self, text: str):
-        return text[:self.default_input_max_characters].strip if len(text) > self.default_input_max_characters else text.strip()
-        
-        
-    def set_generation_model(self, model_id: str):
-        self.generation_model_id = model_id
-    
      
-    def set_embedding_model(self, model_id: str, embedding_size: int):
-        self.embedding_model_id = model_id
-        self.embedding_size = embedding_size
-     
-    def generate_text(self, prompt: str, chat_history: list=[], max_output_tokens: str=None ,temperature: float=None):
+    async def _generate_text(self, messages: list, max_output_tokens: int, temperature: float) -> str:
         
-        if not self.client:
-            self.logger.error("OpenAI client is not set")
-            return None
+        try:
+            response = await self.client.chat.completions.create(
+                model = self.generation_model_id,
+                messages = messages,
+                max_completion_tokens = max_output_tokens,
+                temperature = temperature
+            )
+        except Exception as e:
+            raise LLMProviderError(f"OpenAI generation failed: {e}") from e
         
-        if not self.generation_model_id:
-            self.logger.error("generation model for Open AI is not set")
-            return None     
-        
-        max_output_tokens = (
-            max_output_tokens
-            if max_output_tokens 
-            else self.default_generation_max_tokens
-        )
-        
-        temperature = (
-            temperature 
-            if temperature 
-            else self.default_generation_temperature
-        )     
-        
-        chat_history.append(
-            self.construct_prompt(prompt=prompt, role=OpenAIEnums.USER.value)
-        )
-        
-        response = self.client.chat.completions.create(
-            model = self.generation_model_id,
-            messages = chat_history,
-            max_tokens = max_output_tokens,
-            temperature = temperature
-        )
-        
-        if not response or not response.choices or not response.choices[0].message:
-            self.logger.error("Error while generating text with OpenAI ")
-            return None
+        if not response or not response.choices or not response.choices[0].message.content:
+            finish_reason = response.choices[0].finish_reason if response and response.choices else None
+            raise LLMProviderError(f"OpenAI returned no text (finish_reason={finish_reason})")
         
         return response.choices[0].message.content
      
-    def embed_text(self, text: str, document_type: str=None):
+    async def _embed_text(self, texts: list[str], document_type: str=None) -> list[list[float]]:
         
-        if not self.client:
-            self.logger.error("OpenAI client is not set")
-            return None
+        # OpenAI embeddings are symmetric, document_type is accepted for interface parity
+        try:
+            response = await self.client.embeddings.create(
+                model = self.embedding_model_id,
+                input = texts
+            )
+        except Exception as e:
+            raise EmbeddingError(f"OpenAI embedding failed: {e}") from e
         
-        if not self.embedding_model_id:
-            self.logger.error("Embedding model for Open AI is not set")
-            return None
+        if not response or not response.data:
+            raise EmbeddingError("OpenAI returned no embeddings")
         
-        
-        response = self.client.embeddings.create(
-            model = self.embedding_model_id,
-            input = text
-        )
-        
-        if not response or not response.data or not response.data[0].embedding:
-            self.logger.error("Error while embedding text with OpenAI ")
-            return None
-
-        return response.data[0].embedding    
-     
-    def construct_prompt(self, prompt: str, role: str):
-        return{
-            "role": role,
-            "content": self._process_text(prompt)
-        }
+        # each item carries its own index, do not rely on the response order
+        return [item.embedding for item in sorted(response.data, key=lambda item: item.index)]

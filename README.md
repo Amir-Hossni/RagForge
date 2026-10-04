@@ -1,6 +1,6 @@
 <div align="center">
 
-# Mini-RAG
+# RagLoom
 
 **A modular Retrieval-Augmented Generation (RAG) backend built with FastAPI.**
 
@@ -36,7 +36,7 @@ Ingest documents and web pages, split them into chunks, store them, and (soon) a
 
 ## Overview
 
-Mini-RAG is a backend service that prepares your data for Retrieval-Augmented Generation.
+RagLoom is a backend service that prepares your data for Retrieval-Augmented Generation.
 It is organized around **projects**: each project owns a set of **assets** (uploaded files or web URLs) that are
 processed into **chunks** and stored in MongoDB, ready to be embedded into a vector database and used to answer questions.
 
@@ -121,7 +121,7 @@ The code follows a layered structure:
 ## Project Structure
 
 ```text
-Mini_Rag/
+ragloom/
 ├── Docker/
 │   ├── docker.compose.yaml        # MongoDB service
 │   └── .env.example
@@ -164,7 +164,7 @@ Mini_Rag/
 
 ```bash
 git clone <repository-url>
-cd Mini_Rag
+cd ragloom
 
 # creates .venv and installs all dependencies from uv.lock
 uv sync
@@ -211,7 +211,7 @@ All settings are read from `.env` in the project root. Empty values are treated 
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `APP_NAME` | Application name | `"Mini_Rag"` |
+| `APP_NAME` | Application name | `"RagLoom"` |
 | `APP_VERSION` | Application version | `"0.1"` |
 | `FILE_ALLOWED_TYPES` | Allowed upload MIME types | `["text/plain", "application/pdf", "text/markdown", "application/epub+zip"]` |
 | `FILE_MAX_SIZE` | Max upload / URL content size in **MB** | `10` |
@@ -292,7 +292,7 @@ GET /api/v1/
 ```
 
 ```json
-{ "app_name": "Mini_Rag", "app_version": "0.1" }
+{ "app_name": "RagLoom", "app_version": "0.1" }
 ```
 
 ### Upload a file

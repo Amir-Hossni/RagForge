@@ -1,5 +1,5 @@
 [project]
-name = "mini-rag"
+name = "ragloom"
 version = "0.1.0"
 description = "A modular Retrieval-Augmented Generation (RAG) backend built with FastAPI"
 readme = "README.md"
@@ -31,7 +31,7 @@ dependencies = [
 ]
 
 [project.scripts]
-mini-rag = "rag_app:main"
+ragloom = "rag_app:main"
 
 [build-system]
 requires = ["uv_build>=0.12.5,<0.13.0"]

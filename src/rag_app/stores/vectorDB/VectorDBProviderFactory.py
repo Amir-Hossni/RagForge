@@ -1,6 +1,6 @@
 from .providers import QdrantDBProvider
 from .VectorDBEnums import VectorDBBEnums   
-from src.mini_rag.controllers.BaseController import BaseController 
+from src.rag_app.controllers.BaseController import BaseController 
 
 
 class VectorDBProviderFactory:

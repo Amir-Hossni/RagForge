@@ -32,5 +32,5 @@ $ sudo docker compose up -d
 ## Run the FastApi server
 
 ```bash
-    uvicorn mini_rag.main:app --reload --host 0.0.0.0 --port 5000
+    uvicorn rag_app.main:app --reload --host 0.0.0.0 --port 5000
 ```~

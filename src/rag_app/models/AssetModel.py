@@ -18,7 +18,7 @@ class AssetModel(BaseDataModel):
         await instance.init_collection()
         return instance         
     
-    async def init_collection(self) -> Asset:   
+    async def init_collection(self) -> None:   
             all_collections = await self.db_client.list_collection_names()
             
             if DataBaseEnum.COLLECTION_ASSET_NAME.value not in all_collections:
@@ -51,6 +51,18 @@ class AssetModel(BaseDataModel):
             }).to_list(length=None) 
         
         return [Asset(**record) for record in records]                  
+    
+    async def get_asset_by_id(self, asset_project_id: str, asset_id: str):
+        
+        record = await self.collection.find_one({
+            "_id": ObjectId(asset_id) if isinstance(asset_id, str) else asset_id,
+            "asset_project_id": ObjectId(asset_project_id) if isinstance(asset_project_id, str) else asset_project_id
+        })
+        
+        if record:
+            return Asset(**record)
+        
+        return None
     
     async def get_asset_record(self, asset_project_id: str, asset_name: str):
         

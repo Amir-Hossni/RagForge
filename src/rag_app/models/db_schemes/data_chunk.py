@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict , Field, validator
+from pydantic import BaseModel, ConfigDict , Field
 from typing import  Optional
 from bson.objectid import ObjectId
 
@@ -23,6 +23,11 @@ class DataChunk(BaseModel):
             {
                 "key": [("chunk_project_id", 1)],
                 "name": "chunk_project_id_index_1",
+                "unique": False
+            },
+            {
+                "key": [("chunk_asset_id", 1)],
+                "name": "chunk_asset_id_index_1",
                 "unique": False
             }
         ]

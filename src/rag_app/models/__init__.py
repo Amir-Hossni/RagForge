@@ -2,6 +2,7 @@ from .enums import ResponseSignal
 from .enums import ProcessingEnum
 from .enums import DataBaseEnum
 from .enums import AssetTypeEnum
+from .enums import ContentTypeEnum
 
 
 from .db_schemes import Project, DataChunk , Asset

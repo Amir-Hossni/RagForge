@@ -4,3 +4,5 @@ class ProcessingEnum(Enum):
     
     TXT = ".txt"
     PDF = ".pdf"
+    MD = ".md"
+    EPUB = ".epub"

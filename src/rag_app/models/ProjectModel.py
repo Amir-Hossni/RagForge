@@ -16,7 +16,7 @@ class ProjectModel(BaseDataModel):
         await instance.init_collection()
         return instance 
 
-    async def init_collection(self) -> Project:   
+    async def init_collection(self) -> None:   
         all_collections = await self.db_client.list_collection_names()
         
         if DataBaseEnum.COLLECTION_PROJECT_NAME.value not in all_collections:
@@ -57,7 +57,7 @@ class ProjectModel(BaseDataModel):
             return Project(**record)
         
         
-    async def get_all_projects(self, page: int = 1, page_size: int = 10) -> list[Project]:
+    async def get_all_projects(self, page: int = 1, page_size: int = 10) -> tuple[list[Project], int]:
         # Calculate the number of documents to skip based on the page and page_size
         
         total_documents  = await self.collection.count_documents({})  # Get the total number of documents in the collection 

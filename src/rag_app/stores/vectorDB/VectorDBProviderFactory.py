@@ -16,6 +16,9 @@ class VectorDBProviderFactory:
             return QdrantDBProvider(
                                     db_path=db_path,
                 distance_metric=self.config.VECTOR_DB_DISTANCE_METRIC,      
+                db_url=self.config.VECTOR_DB_URL,
+                api_key=self.config.VECTOR_DB_API_KEY,
+                timeout=self.config.VECTOR_DB_TIMEOUT,
           )
         
         return None    

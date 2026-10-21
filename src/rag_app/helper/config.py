@@ -45,6 +45,11 @@ class Settings(BaseSettings):
     VECTOR_DB_BACKEND : Optional[str] = None
     VECTOR_DB_PATH : Optional[str] = None
     VECTOR_DB_DISTANCE_METRIC : Optional[str] = None 
+    # when set, the client talks to a Qdrant server instead of the embedded local storage
+    # the embedded mode allows only one process to open the storage folder at a time
+    VECTOR_DB_URL : Optional[str] = None
+    VECTOR_DB_API_KEY : Optional[str] = None
+    VECTOR_DB_TIMEOUT : Optional[int] = None
     
     #URL LOADER
     URL_REQUEST_TIMEOUT : int = 15

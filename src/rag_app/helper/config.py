@@ -51,10 +51,13 @@ class Settings(BaseSettings):
     VECTOR_DB_API_KEY : Optional[str] = None
     VECTOR_DB_TIMEOUT : Optional[int] = None
     
-    #URL LOADER
+    # URL LOADER
     URL_REQUEST_TIMEOUT : int = 15
     URL_MAX_REDIRECTS : int = 5
     
+    # Templates Config
+    PRIMARY_LANGUAGE : str = "en"
+    DEFAULT_LANGUAGE : str = "en"
 
     
     model_config = SettingsConfigDict(env_file=".env", env_ignore_empty=True)

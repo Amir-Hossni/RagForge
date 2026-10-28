@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod 
 from typing import List 
 
+from src.rag_app.models import RetrievedDocument
 
 class VectorDBInterFace(ABC):
     
@@ -45,7 +46,7 @@ class VectorDBInterFace(ABC):
         pass
     
     @abstractmethod
-    def search_by_vector(self, collection_name: str, vector: list, limit: int) -> list:
+    def search_by_vector(self, collection_name: str, vector: list, limit: int) -> List[RetrievedDocument]:
         pass
     
     

@@ -9,11 +9,12 @@ from ..stores.llm import DocumentTypeEnums
 
 class NLPController(BaseController):
     
-    def __init__(self, vectordb_client, generation_client, embedding_client):
+    def __init__(self, vectordb_client, generation_client, embedding_client, templateparser=None):
         super().__init__()
         self.vectordb_client = vectordb_client
-        self.generator_client = generation_client
+        self.generation_client = generation_client
         self.embedding_client = embedding_client
+        self.templateparser = templateparser
         
     def create_collection_name(self, project_id: str):
         # Create a unique collection name based on the project ID
@@ -85,7 +86,53 @@ class NLPController(BaseController):
             limit = limit
         )
         
-        if not results:
+        if results is None:
             return False
         
         return results
+    
+    async def answer_rag_question(self, project: Project, query: str, limit: int=5):
+        
+        answer, full_prompt, chat_history = None, None, None
+        
+        # retrieve related Doc
+        
+        retrieve_documents = await self.search_vector_db_collection(
+            project=project,
+            text=query,
+            limit=limit
+        )
+        
+        if not retrieve_documents:
+            return answer, full_prompt, chat_history
+        
+        
+        # costruct LLM prompt
+        
+        system_prompt = self.templateparser.get("rag", "system_prompt")
+        
+        document_prompt = "\n".join([
+            self.templateparser.get("rag", "document_prompt", {
+                    "doc_num": idx + 1,
+                    "chunk_text": doc.text
+                })
+            
+            for idx, doc in enumerate(retrieve_documents)
+        ])
+        
+        footer_prompt = self.templateparser.get("rag", "footer_prompt")
+        
+        chat_history = [
+            self.generation_client.construct_prompt(
+                prompt=system_prompt,
+                role=self.generation_client.ROLES.SYSTEM.value
+            ) 
+        ]
+        
+        full_prompt = "\n\n".join([document_prompt, f"## Question:\n{query}", footer_prompt])
+        
+        answer = await self.generation_client.generate_text(prompt=full_prompt, chat_history=chat_history)
+        
+        return answer, full_prompt, chat_history
+        
+        

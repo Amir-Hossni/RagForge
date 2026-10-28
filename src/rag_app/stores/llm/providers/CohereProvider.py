@@ -75,3 +75,10 @@ class CoHereProvider(LLMinterface):
         
         if httpx_client is not None and hasattr(httpx_client, "aclose"):
             await httpx_client.aclose()
+
+    
+    def construct_prompt(self, prompt: str, role: str):
+            return{
+                "role": role,
+                "content": self._process_text(prompt)
+            }

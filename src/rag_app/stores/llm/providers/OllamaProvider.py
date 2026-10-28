@@ -24,7 +24,7 @@ class OllamaProvider(LLMinterface):
         self.api_url = api_url
         
         # async client, so waiting for the model does not block the FastAPI event loop
-        self.client = AsyncClient(host=self.api_url)
+        self.client = AsyncClient(host=self.api_url if self.api_url and len(self.api_url) else None)
      
     async def _generate_text(self, messages: list, max_output_tokens: int, temperature: float) -> str:
         

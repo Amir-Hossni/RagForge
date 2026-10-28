@@ -29,7 +29,7 @@ class OpenAiProvider(LLMinterface):
         # async client, so waiting for the model does not block the FastAPI event loop
         self.client = AsyncOpenAI(
             api_key = self.api_key,
-            base_url = self.api_url
+            base_url = self.api_url if self.api_url and len(self.api_url) else None
         )
      
     async def _generate_text(self, messages: list, max_output_tokens: int, temperature: float) -> str:

@@ -5,7 +5,7 @@ from .enums import AssetTypeEnum
 from .enums import ContentTypeEnum
 
 
-from .db_schemes import Project, DataChunk , Asset
+from .db_schemes import Project, DataChunk , Asset, RetrievedDocument
 from .BaseDataModel import BaseDataModel
 from .ProjectModel import ProjectModel
 from .ChunkModel import ChunkModel

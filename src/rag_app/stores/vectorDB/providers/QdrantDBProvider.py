@@ -3,7 +3,7 @@ import logging
 import uuid
 from typing import List 
 
-
+from src.rag_app.models import RetrievedDocument
 from ..VectorDBInterFace import VectorDBInterFace
 from ..VectorDBEnums import  DistanceMetricEnums
 
@@ -186,16 +186,28 @@ class QdrantDBProvider(VectorDBInterFace):
         
     
     
-    def search_by_vector(self, collection_name: str, vector: list, limit: int=5) -> list:
+    def search_by_vector(self, collection_name: str, vector: list, limit: int=5) -> RetrievedDocument:
         # searching in a collection that was never created is not an error, it returns no results
         if not self.is_collection_exists(collection_name):
             self.logger.warning(f"Collection '{collection_name}' does not exist.")
             return []
             
-        return self.client.query_points(
+        results =  self.client.query_points(
             collection_name=collection_name,
             query=vector,
             limit=limit
         ).points
+        
+        if not results or len(results) == 0:
+            return []
+        
+        return [
+            RetrievedDocument(**{
+                "score": result.score,
+                "text": result.payload["text"]
+            })
+            for result in results
+        ]
+            
         
             

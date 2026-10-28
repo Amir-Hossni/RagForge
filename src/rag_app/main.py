@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from pymongo import AsyncMongoClient
 from .routes import base , data, nlp
 from .helper import get_settings
-from .stores.llm import LLMProviderFactory
+from .stores.llm import LLMProviderFactory , TemplateParser
 from .stores.vectorDB import VectorDBProviderFactory  
 
 @asynccontextmanager
@@ -31,6 +31,11 @@ async def lifespan(app: FastAPI):
     if app.vectordb_client is None:
         raise ValueError(f"Unsupported VECTOR_DB_BACKEND: {settings.VECTOR_DB_BACKEND}")
     app.vectordb_client.connect()
+    
+    app.templateparser = TemplateParser(
+        language=settings.PRIMARY_LANGUAGE,
+        default_language=settings.DEFAULT_LANGUAGE
+    )
 
     yield
 

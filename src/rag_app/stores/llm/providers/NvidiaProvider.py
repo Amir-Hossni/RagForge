@@ -29,7 +29,7 @@ class NvidiaProvider(LLMinterface):
         # NVIDIA NIM is OpenAI-compatible, so the OpenAI SDK is used with NVIDIA's base url
         self.client = AsyncOpenAI(
             api_key = self.api_key,
-            base_url = self.api_url
+            base_url = self.api_url if self.api_url and len(self.api_url) else None
         )
      
     async def _generate_text(self, messages: list, max_output_tokens: int, temperature: float) -> str:

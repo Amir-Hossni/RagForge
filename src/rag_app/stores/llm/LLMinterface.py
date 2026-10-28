@@ -9,6 +9,11 @@ class LLMinterface(ABC):
     PROVIDER_NAME = None
     ROLES = None
     
+    @property
+    def enums(self):
+        # Backward-compatibility alias for ROLES
+        return self.ROLES
+    
     def __init__(self, api_key: str=None,
                  default_input_max_characters: int=1000,
                  default_generation_max_tokens: int=1000,

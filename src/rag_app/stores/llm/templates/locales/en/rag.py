@@ -33,7 +33,8 @@ document_prompt = Template(
 footer_prompt = Template(
 """---
 Use the documents above as context to answer the user's question.
-
-## asnswer: """
+## Question:
+$query
+## Answer: """
 )
 

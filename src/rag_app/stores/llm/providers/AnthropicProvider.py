@@ -12,13 +12,15 @@ class AnthropicProvider(LLMinterface):
     def __init__(self, api_key: str,  
                  default_input_max_characters: int=1000,
                  default_generation_max_tokens: int=1000,
-                 default_generation_temperature: float=0.1):
+                 default_generation_temperature: float=0.1,
+                 default_think: bool | str | None = None):
         
         super().__init__(
             api_key=api_key,
             default_input_max_characters=default_input_max_characters,
             default_generation_max_tokens=default_generation_max_tokens,
-            default_generation_temperature=default_generation_temperature
+            default_generation_temperature=default_generation_temperature,
+            default_think=default_think
         )
         
         # async client, so waiting for the model does not block the FastAPI event loop
@@ -52,6 +54,9 @@ class AnthropicProvider(LLMinterface):
         }
         if system_prompt:
             request["system"] = system_prompt
+        
+        if self.default_think is not None:
+            request["think"] = self.default_think
         
         try:
             response = await self.client.messages.create(**request)

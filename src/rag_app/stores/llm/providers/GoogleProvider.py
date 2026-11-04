@@ -13,13 +13,15 @@ class GoogleProvider(LLMinterface):
     def __init__(self, api_key: str,  
                  default_input_max_characters: int=1000,
                  default_generation_max_tokens: int=1000,
-                 default_generation_temperature: float=0.1):
+                 default_generation_temperature: float=0.1,
+                 default_think: bool | str | None = None):
         
         super().__init__(
             api_key=api_key,
             default_input_max_characters=default_input_max_characters,
             default_generation_max_tokens=default_generation_max_tokens,
-            default_generation_temperature=default_generation_temperature
+            default_generation_temperature=default_generation_temperature,
+            default_think=default_think
         )
         
         # Gemini caps the number of texts per embedding request
@@ -46,11 +48,18 @@ class GoogleProvider(LLMinterface):
             if message["role"] != GoogleEnums.SYSTEM.value
         ]
         
-        config = types.GenerateContentConfig(
-            system_instruction = system_prompt or None,
-            max_output_tokens = max_output_tokens,
-            temperature = temperature
-        )
+        config_kwargs = {
+            "system_instruction": system_prompt or None,
+            "max_output_tokens": max_output_tokens,
+            "temperature": temperature
+        }
+
+        if self.default_think is not None:
+            config_kwargs["thinking_config"] = types.ThinkingConfig(
+                thinking_level=self.default_think
+            )
+
+        config = types.GenerateContentConfig(**config_kwargs)
         
         try:
             response = await self.client.aio.models.generate_content(

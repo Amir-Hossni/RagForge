@@ -12,13 +12,15 @@ class OpenAiProvider(LLMinterface):
     def __init__(self, api_key: str, api_url: str=None, 
                  default_input_max_characters: int=1000,
                  default_generation_max_tokens: int=1000,
-                 default_generation_temperature: float=0.1):
+                 default_generation_temperature: float=0.1,
+                 default_think: bool | str | None = None):
         
         super().__init__(
             api_key=api_key,
             default_input_max_characters=default_input_max_characters,
             default_generation_max_tokens=default_generation_max_tokens,
-            default_generation_temperature=default_generation_temperature
+            default_generation_temperature=default_generation_temperature,
+            default_think=default_think
         )
         
         self.api_url = api_url
@@ -35,12 +37,17 @@ class OpenAiProvider(LLMinterface):
     async def _generate_text(self, messages: list, max_output_tokens: int, temperature: float) -> str:
         
         try:
-            response = await self.client.chat.completions.create(
-                model = self.generation_model_id,
-                messages = messages,
-                max_completion_tokens = max_output_tokens,
-                temperature = temperature
-            )
+            request_kwargs = {
+                "model": self.generation_model_id,
+                "messages": messages,
+                "max_completion_tokens": max_output_tokens,
+                "temperature": temperature
+            }
+
+            if self.default_think is not None:
+                request_kwargs["reasoning_effort"] = self.default_think
+
+            response = await self.client.chat.completions.create(**request_kwargs)
         except Exception as e:
             raise LLMProviderError(f"OpenAI generation failed: {e}") from e
         

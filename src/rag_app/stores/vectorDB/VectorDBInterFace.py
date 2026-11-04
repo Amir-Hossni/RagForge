@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod 
 from typing import List 
 
-from src.rag_app.models import RetrievedDocument
+from ...models import RetrievedDocument
 
 class VectorDBInterFace(ABC):
     

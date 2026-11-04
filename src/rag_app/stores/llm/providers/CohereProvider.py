@@ -12,13 +12,15 @@ class CoHereProvider(LLMinterface):
     def __init__(self, api_key: str,  
                  default_input_max_characters: int=1000,
                  default_generation_max_tokens: int=1000,
-                 default_generation_temperature: float=0.1):
+                 default_generation_temperature: float=0.1,
+                 default_think: bool | str | None = None):
         
         super().__init__(
             api_key=api_key,
             default_input_max_characters=default_input_max_characters,
             default_generation_max_tokens=default_generation_max_tokens,
-            default_generation_temperature=default_generation_temperature
+            default_generation_temperature=default_generation_temperature,
+            default_think=default_think
         )
         
         # Cohere accepts at most 96 texts per embedding request
@@ -30,12 +32,17 @@ class CoHereProvider(LLMinterface):
     async def _generate_text(self, messages: list, max_output_tokens: int, temperature: float) -> str:
         
         try:
-            response = await self.client.chat(
-                    model = self.generation_model_id,
-                    messages = messages,
-                    temperature = temperature,
-                    max_tokens = max_output_tokens  
-                )
+            request_kwargs = {
+                "model": self.generation_model_id,
+                "messages": messages,
+                "temperature": temperature,
+                "max_tokens": max_output_tokens
+            }
+
+            if self.default_think is not None:
+                request_kwargs["thinking"] = self.default_think
+
+            response = await self.client.chat(**request_kwargs)
         except Exception as e:
             raise LLMProviderError(f"Cohere generation failed: {e}") from e
         

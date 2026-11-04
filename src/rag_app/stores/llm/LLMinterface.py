@@ -17,12 +17,14 @@ class LLMinterface(ABC):
     def __init__(self, api_key: str=None,
                  default_input_max_characters: int=1000,
                  default_generation_max_tokens: int=1000,
-                 default_generation_temperature: float=0.1):
+                 default_generation_temperature: float=0.1,
+                 default_think: bool | str | None = None):
         
         self.api_key = api_key
         self.default_input_max_characters = default_input_max_characters
         self.default_generation_max_tokens = default_generation_max_tokens
         self.default_generation_temperature = default_generation_temperature
+        self.default_think = default_think
 
         self.generation_model_id = None
         

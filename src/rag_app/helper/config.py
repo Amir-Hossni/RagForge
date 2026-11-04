@@ -21,21 +21,24 @@ class Settings(BaseSettings):
 
     OPENAI_API_KEY : Optional[str] = None
     OPENAI_API_URL : Optional[str] = None
-
+    
     COHERE_API_KEY : Optional[str] = None
     
     ANTHROPIC_API_KEY : Optional[str] = None
     GOOGLE_API_KEY : Optional[str] = None
     
     NVIDIA_API_KEY : Optional[str] = None
-    NVIDIA_API_URL : str = "https://integrate.api.nvidia.com/v1"
+    NVIDIA_API_URL : Optional[str] = None
     
-    OLLAMA_API_URL : str = "http://localhost:11434"
+    OLLAMA_API_URL : Optional[str] = None
 
     GENERATION_MODEL_ID : Optional[str] = None
     EMBEDDING_MODEL_ID : Optional[str] = None
     EMBEDDING_MODEL_SIZE : Optional[int] = None
 
+
+    GENERATION_DEFAULT_THINK: bool | str | dict | None = None
+    
     INPUT_DEFAULT_MAX_CHARACTERS : Optional[int] = None
     GENERATION_DEFAULT_MAX_TOKENS : Optional[int] = None
     GENERATION_DEFAULT_TEMPERATURE : Optional[float] = None

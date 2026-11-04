@@ -9,16 +9,18 @@ class OllamaProvider(LLMinterface):
     PROVIDER_NAME = "Ollama"
     ROLES = OllamaEnums
     
-    def __init__(self, api_url: str="http://localhost:11434", 
+    def __init__(self, api_url: str, 
                  default_input_max_characters: int=1000,
                  default_generation_max_tokens: int=1000,
-                 default_generation_temperature: float=0.1):
+                 default_generation_temperature: float=0.1,
+                 default_think: bool | str | None = None):
         
         # Ollama runs locally, so there is no api key
         super().__init__(
             default_input_max_characters=default_input_max_characters,
             default_generation_max_tokens=default_generation_max_tokens,
-            default_generation_temperature=default_generation_temperature
+            default_generation_temperature=default_generation_temperature,
+            default_think=default_think
         )
         
         self.api_url = api_url
@@ -36,11 +38,17 @@ class OllamaProvider(LLMinterface):
             options["temperature"] = temperature
         
         try:
-            response = await self.client.chat(
-                model = self.generation_model_id,
-                messages = messages,
-                options = options
-            )
+            chat_kwargs = {
+                "model": self.generation_model_id,
+                "messages": messages,
+                "options": options
+            }
+
+            if self.default_think is not None:
+                chat_kwargs["think"] = self.default_think
+
+            response = await self.client.chat(**chat_kwargs)
+            
         except Exception as e:
             raise LLMProviderError(
                 f"Ollama generation failed at {self.api_url}: {e} "

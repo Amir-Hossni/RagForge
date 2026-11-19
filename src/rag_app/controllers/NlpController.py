@@ -1,9 +1,7 @@
 from typing import List
 
-
 from .BaseController import BaseController
-from .ProjectController import ProjectController
-from ..models import Project, DataChunk, Asset
+from ..models import Project, DataChunk
 from ..stores.llm import DocumentTypeEnums
 
 

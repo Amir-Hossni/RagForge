@@ -1,6 +1,6 @@
 <div align="center">
 
-# RagLoom
+# RagForge
 
 **A modular Retrieval-Augmented Generation (RAG) backend built with FastAPI.**
 
@@ -140,6 +140,7 @@ ragloom/
 │   ├── models/
 │   │   ├── ProjectModel.py | AssetModel.py | ChunkModel.py
 │   │   ├── db_schemes/            # Pydantic schemas for MongoDB documents
+│   │   │   └── RagApp/              # SQLAlchemy ORM models (database schema)
 │   │   └── enums/                 # Response signals, asset types, extensions, content types
 │   ├── stores/
 │   │   ├── llm/                   # LLM interface, factory, errors and 6 providers
@@ -148,6 +149,38 @@ ragloom/
 ├── .env.example
 ├── pyproject.toml
 └── uv.lock
+## Database Models & Alembic Migrations
+
+### SQLAlchemy ORM Schemes
+
+The `src/rag_app/models/db_schemes/RagApp/` directory contains the SQLAlchemy ORM model definitions for the database schema.
+
+### Alembic Migrations
+
+Alembic configuration has been moved to the **project root**:
+
+| File | Description |
+|------|-------------|
+| `alembic.ini` | Located at the project root (ignored by git, contains DB credentials) |
+| `alembic.ini.example` | Template to copy from |
+| `alembic/` | Migration scripts directory at the project root |
+
+#### Setup
+
+From the project root:
+
+```bash
+cp alembic.ini.example alembic.ini
+```
+
+The DB URL is loaded automatically from `.env` via `config.py` — no need to edit `alembic.ini`.
+
+#### Run Migrations
+
+```bash
+alembic revision --autogenerate -m "description"
+alembic upgrade head
+```
 ```
 
 ---
@@ -184,6 +217,12 @@ Then edit `.env` and set your values (see [Configuration](#configuration)).
 cd Docker
 cp .env.example .env              # set MONGO_INITDB_ROOT_USERNAME / PASSWORD
 docker compose -f docker.compose.yaml up -d
+```
+
+
+### 3. Start Postgres
+```
+sudo docker compose -f docker.compose.yaml up -d pgvector
 ```
 
 > If MongoDB authentication is enabled, include the credentials in `MONGODB_URI`, e.g. `mongodb://user:password@localhost:27017`.

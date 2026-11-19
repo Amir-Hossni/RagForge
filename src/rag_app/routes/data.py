@@ -40,6 +40,13 @@ async def upload_data(request: Request, project_id: int, file: UploadFile,
                 }
             )
     
+    # Validate project_id is a positive integer
+    if project_id <= 0:
+        return JSONResponse(
+            status_code= status.HTTP_400_BAD_REQUEST,
+            content={"signal": ResponseSignal.PROJECT_ID_INVALID.value}
+        )
+    
     project_model = await ProjectModel.create_instance(db_client=request.app.db_client)
     
     project = await project_model.get_project_or_create(project_id=project_id)

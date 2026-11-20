@@ -112,7 +112,7 @@ class NLPController(BaseController):
         document_prompt = "\n".join([
             self.templateparser.get("rag", "document_prompt", {
                     "doc_num": idx + 1,
-                    "chunk_text": doc.text
+                    "chunk_text": self.templateparser.process_text(doc.text)
                 })
             
             for idx, doc in enumerate(retrieve_documents)

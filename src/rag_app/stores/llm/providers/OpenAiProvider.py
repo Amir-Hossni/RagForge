@@ -73,3 +73,9 @@ class OpenAiProvider(LLMinterface):
         
         # each item carries its own index, do not rely on the response order
         return [item.embedding for item in sorted(response.data, key=lambda item: item.index)]
+    
+    def construct_prompt(self, prompt: str, role: str):
+        return{
+            "role": role,
+            "content": prompt
+        }

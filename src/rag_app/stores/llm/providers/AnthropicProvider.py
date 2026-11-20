@@ -72,7 +72,13 @@ class AnthropicProvider(LLMinterface):
             raise LLMProviderError(f"Anthropic returned no text (stop_reason={stop_reason})")
         
         return text
-     
+    
+    def construct_prompt(self, prompt: str, role: str):
+        return{
+            "role": role,
+            "content": prompt
+        }
+    
     async def embed_text(self, texts: list[str], document_type: str=None) -> list[list[float]]:
         # overrides the shared embed_text so the error is clear even before an embedding model is set
         raise EmbeddingError("Anthropic has no embeddings API, choose another EMBEDDING_BACKEND")

@@ -1,6 +1,8 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from pymongo import AsyncMongoClient
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker
+
 from .routes import base , data, nlp
 from .helper import get_settings
 from .stores.llm import LLMProviderFactory , TemplateParser
@@ -11,8 +13,14 @@ async def lifespan(app: FastAPI):
     # startup
     settings = get_settings()
 
-    app.mongodb_conn = AsyncMongoClient(settings.MONGODB_URI)
-    app.db_client = app.mongodb_conn[settings.MONGODB_DATABASE]
+    #DataBase
+    app.db_engine = create_async_engine(settings.POSTGRES_ASYNC_URL)
+    
+    app.db_client = sessionmaker(
+        bind=app.db_engine,
+        class_=AsyncSession,
+        expire_on_commit=False
+    )
 
     llm_provider_factory = LLMProviderFactory(settings)
     vectordb_provider_factory = VectorDBProviderFactory(settings)    
@@ -40,7 +48,7 @@ async def lifespan(app: FastAPI):
     yield
 
     # shutdown
-    app.mongodb_conn.close()
+    app.db_engine.dispose()
     app.vectordb_client.disconnect() 
 
 app = FastAPI(lifespan=lifespan)

@@ -1,5 +1,6 @@
 from functools import lru_cache
 from typing import Optional
+from urllib.parse import quote_plus
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
@@ -12,8 +13,39 @@ class Settings(BaseSettings):
     FILE_MAX_SIZE : int
     FILE_DEFAULT_CHUNK_SIZE : int
     
-    MONGODB_URI : str
-    MONGODB_DATABASE : str
+    #database config
+    
+    # MONGODB_URI : str
+    # MONGODB_DATABASE : str
+    
+    POSTGRES_USERNAME: str
+    POSTGRES_PASSWORD: str
+    POSTGRES_HOST: str
+    POSTGRES_PORT: int
+    POSTGRES_MAIN_DATABASE: str
+
+    @property
+    def POSTGRES_SYNC_URL(self) -> str:
+        """Sync DB URL for Alembic migrations (psycopg v3 sync driver)."""
+        return "postgresql+psycopg://{user}:{password}@{host}:{port}/{database}".format(
+            user=quote_plus(self.POSTGRES_USERNAME),
+            password=quote_plus(self.POSTGRES_PASSWORD),
+            host=self.POSTGRES_HOST,
+            port=self.POSTGRES_PORT,
+            database=self.POSTGRES_MAIN_DATABASE,
+        )
+
+    @property
+    def POSTGRES_ASYNC_URL(self) -> str:
+        """Async DB URL for FastAPI / SQLAlchemy async engine (psycopg v3 async driver)."""
+        return "postgresql+psycopg_async://{user}:{password}@{host}:{port}/{database}".format(
+            user=quote_plus(self.POSTGRES_USERNAME),
+            password=quote_plus(self.POSTGRES_PASSWORD),
+            host=self.POSTGRES_HOST,
+            port=self.POSTGRES_PORT,
+            database=self.POSTGRES_MAIN_DATABASE,
+        )
+   
     
     #LLM PROVIDERS     
     GENERATION_BACKEND : Optional[str] = None

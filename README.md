@@ -1,23 +1,21 @@
 <div align="center">
 
-# RagLoom
+# **RagForge** 🔍
 
 **A modular Retrieval-Augmented Generation (RAG) backend built with FastAPI.**
 
-Ingest documents and web pages, split them into chunks, store them, and (soon) answer questions grounded in your own data.
-
 ![Python](https://img.shields.io/badge/Python-3.14-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.141-009688?logo=fastapi&logoColor=white)
-![MongoDB](https://img.shields.io/badge/MongoDB-PyMongo%20Async-47A248?logo=mongodb&logoColor=white)
-![Qdrant](https://img.shields.io/badge/Vector%20DB-Qdrant-DC244C)
-![uv](https://img.shields.io/badge/Package%20Manager-uv-DE5FE9)
-![Status](https://img.shields.io/badge/Status-Work%20in%20Progress-orange)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
+![Qdrant](https://img.shields.io/badge/Vector_DB-Qdrant-DC244C?logo=qdrant&logoColor=white)
+![uv](https://img.shields.io/badge/Package_Manager-uv-DE5FE9?logo=uv&logoColor=white)
+![Status](https://img.shields.io/badge/Status-Work_in_Progress-orange?logo=gitbook&logoColor=white)
 
 </div>
 
 ---
 
-## Table of Contents
+## 📑 Table of Contents
 
 - [Overview](#overview)
 - [Project Status](#project-status)
@@ -34,51 +32,55 @@ Ingest documents and web pages, split them into chunks, store them, and (soon) a
 
 ---
 
-## Overview
+## 🔎 Overview
 
-RagLoom is a backend service that prepares your data for Retrieval-Augmented Generation.
-It is organized around **projects**: each project owns a set of **assets** (uploaded files or web URLs) that are
-processed into **chunks** and stored in MongoDB, ready to be embedded into a vector database and used to answer questions.
+**RagForge** is a backend service that prepares your data for Retrieval-Augmented Generation (RAG).
 
-The codebase is built around pluggable providers, so LLMs and vector databases can be swapped through configuration:
+It is organized around **projects**: each project owns a set of **assets** (uploaded files or web URLs) that are processed into **chunks** and stored in **PostgreSQL**, ready to be embedded into a vector database (Qdrant) and used to answer questions grounded in your own data.
 
-- **LLM providers** — OpenAI, Cohere, Google Gemini, NVIDIA NIM, Ollama (local) and Anthropic (generation only) behind a common async interface and factory.
-- **Vector DB providers** — Qdrant behind a common interface and factory.
-- **Loaders** — local files (TXT, Markdown, PDF, EPUB) and remote URLs (HTML, PDF, plain text) fetched in memory.
+### Key Concepts
+
+| Concept | Description |
+|---------|-------------|
+| `project_id` | A **positive integer** auto-increment primary key (PostgreSQL `projects` table). |
+| `project_uuid` | A unique UUID generated when the project is created (PostgreSQL `projects` table). |
+| `asset` | A file or URL uploaded to a project. Stored in `assets` table. |
+| `chunk` | A text segment extracted from an asset, stored in `chunks` table. |
+| `provider` | Pluggable LLM or vector DB backend (factory pattern). |
 
 ---
 
-## Project Status
+## 📊 Project Status
 
 > **This project is under active development.** The ingestion pipeline is functional; retrieval and answer generation are next.
 
-| Stage | Component | Status |
-|:-----:|-----------|:------:|
-| 1 | File upload & validation | ✅ Done |
-| 2 | URL ingestion (in-memory, no download to disk) | ✅ Done |
-| 3 | Text extraction & chunking | ✅ Done |
-| 4 | Chunk storage in MongoDB | ✅ Done |
-| 5 | LLM providers (OpenAI, Cohere, Google, NVIDIA, Ollama, Anthropic) | ✅ Implemented — not wired to endpoints yet |
-| 6 | Vector DB provider (Qdrant) | ✅ Implemented — not wired to endpoints yet |
-| 7 | Indexing chunks into the vector DB | 🚧 Planned |
-| 8 | Semantic search endpoint | 🚧 Planned |
-| 9 | RAG answer generation endpoint | 🚧 Planned |
+| # | Stage | Component | Status |
+|:---:|-------|-----------|:------:|
+| 1 | File upload & validation | ✅ Done | `POST /api/v1/data/upload/{project_id}` |
+| 2 | URL ingestion (in-memory, no download to disk) | ✅ Done | `POST /api/v1/data/upload-url/{project_id}` |
+| 3 | Text extraction & chunking | ✅ Done | `src/rag_app/controllers/ProcessController.py` |
+| 4 | Chunk storage in PostgreSQL | ✅ Done | `src/rag_app/models/ChunkModel.py` |
+| 5 | LLM providers (OpenAI, Cohere, Google, NVIDIA, Ollama, Anthropic) | ✅ Implemented — **wiring to endpoints in progress** | `src/rag_app/stores/llm/providers/` |
+| 6 | Vector DB provider (Qdrant) | ✅ Implemented — **wiring to endpoints in progress** | `src/rag_app/stores/vectorDB/providers/QdrantDBProvider.py` |
+| 7 | Indexing chunks into the vector DB | ✅ **Functional** | `POST /api/v1/nlp/index/push/{project_id}` |
+| 8 | Semantic search endpoint | 🚧 Planned | `/nlp/index/search/{project_id}` |
+| 9 | RAG answer generation endpoint | 🚧 Planned | `/nlp/index/answer/{project_id}` |
 
 ---
 
-## Architecture
+## 🏗️ Architecture
 
 ```mermaid
 flowchart LR
     subgraph Ingestion["Ingestion ✅"]
-        A[Upload file] --> C[Assets<br/>MongoDB]
+        A[Upload file] --> C[Assets<br/>PostgreSQL]
         B[Add URL] --> C
         C --> D{Loader}
         D -->|TXT / MD| E[load_text_file]
         D -->|PDF / EPUB| F[load_pymupdf_file]
         D -->|HTML / PDF / TXT URL| G[get_url_content<br/>in memory]
         E & F & G --> H[RecursiveCharacterTextSplitter]
-        H --> I[(Chunks<br/>MongoDB)]
+        H --> I[(Chunks<br/>PostgreSQL)]
     end
 
     subgraph Retrieval["Retrieval & Generation 🚧"]
@@ -90,344 +92,360 @@ flowchart LR
     end
 ```
 
-The code follows a layered structure:
+### Component Interaction Flow
 
-| Layer | Responsibility |
-|-------|----------------|
-| `routes/` | HTTP endpoints and request schemas |
-| `controllers/` | Business logic: validation, file paths, loading and chunking |
-| `models/` | MongoDB data access (projects, assets, chunks), schemas and enums |
-| `stores/` | Pluggable providers: LLMs and vector databases (interface + factory + providers) |
-| `helper/` | Application settings loaded from `.env` |
+1. **Upload/URL Ingestion** → `DataController` → Save file/URL content to disk → Create `Asset` record in PostgreSQL.
+2. **Chunking** → `ProcessController` → Extract text → Split into chunks (using LangChain `RecursiveCharacterTextSplitter`).
+3. **Storage** → `ChunkModel` → Insert chunks into PostgreSQL (`chunks` table).
+4. **Indexing** → `NlpController.index_into_vector_db()` → Generate embeddings (via `EmbeddingClient`) → Push vectors to Qdrant.
+5. **Search/Answer** → `NlpController` → Retrieve relevant chunks from Qdrant → Build prompt → Generate answer using `GenerationClient`.
 
 ---
 
-## Tech Stack
+## 🧰 Tech Stack
 
-| Category | Technology |
-|----------|------------|
-| Web framework | FastAPI, Uvicorn |
-| Database | MongoDB (PyMongo Async API) |
-| Vector database | Qdrant (`qdrant-client`) |
-| LLM / Embeddings | OpenAI, Cohere (V2 API), Google Gemini (`google-genai`), NVIDIA NIM, Ollama, Anthropic — all async |
-| Document parsing | PyMuPDF |
-| Web extraction | httpx, trafilatura |
-| Chunking | `langchain-text-splitters` |
-| Validation & settings | Pydantic v2, pydantic-settings |
-| Package management | uv |
+| Layer | Technology |
+|-------|------------|
+| **Runtime** | Python 3.14 |
+| **Web Framework** | FastAPI |
+| **ORM / Async DB Driver** | SQLAlchemy 2.x (async) with `psycopg[binary]` (PostgreSQL async driver) |
+| **Vector DB** | Qdrant |
+| **LLM Providers** | OpenAI, Cohere, Google Gemini, NVIDIA NIM, Ollama (local), Anthropic (generation only) |
+| **Embedding** | (same providers via `embed_text`) |
+| **Text Processing** | `RecursiveCharacterTextSplitter` (LangChain) |
+| **PDF/EPUB Parsing** | PyMuPDF |
+| **URL Parsing** | `trafilatura` (HTML), `pymupdf` (PDF) |
+| **Package Manager** | `uv` |
+| **Templating** | Python `string.Template` (locale files `en`, `ar`) |
+| **Database Migrations** | Alembic |
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
-```text
-ragloom/
-├── Docker/
-│   ├── docker.compose.yaml        # MongoDB service
-│   └── .env.example
-├── src/rag_app/
-│   ├── main.py                    # FastAPI app + lifespan (DB and LLM clients)
-│   ├── helper/
-│   │   └── config.py              # Settings (pydantic-settings)
-│   ├── routes/
-│   │   ├── base.py                # GET /api/v1/
-│   │   ├── data.py                # upload / upload-url / process
-│   │   └── schemes/data.py        # Request bodies
-│   ├── controllers/
-│   │   ├── DataController.py      # Upload validation, unique file paths
-│   │   ├── ProjectController.py   # Project folders on disk
-│   │   └── ProcessController.py   # File & URL loading (in memory, SSRF protected) + chunking
-│   ├── models/
-│   │   ├── ProjectModel.py | AssetModel.py | ChunkModel.py
-│   │   ├── db_schemes/            # Pydantic schemas for MongoDB documents
-│   │   └── enums/                 # Response signals, asset types, extensions, content types
-│   ├── stores/
-│   │   ├── llm/                   # LLM interface, factory, errors and 6 providers
-│   │   └── vectorDB/              # Vector DB interface, factory, Qdrant provider
-│   └── assets/                    # Uploaded files, local vector DB, Postman collection
+```
+Mini_Rag/
 ├── .env.example
+├── .gitignore
+├── README.md
+├── alembic.ini
+├── alembic/
+│   ├── env.py
+│   ├── script.py.mako
+│   └── versions/
+├── Docker/
+│   ├── docker.compose.yaml    # Docker compose (pgvector service)
+│   └── .env.example
 ├── pyproject.toml
-└── uv.lock
+├── uv.lock
+└── src/
+    └── rag_app/
+        ├── __init__.py
+        ├── main.py                  # FastAPI app, lifespan, DB init, client creation
+        ├── helper/
+        │   ├── __init__.py
+        │   └── config.py              # Settings (Pydantic Settings)
+        ├── controllers/
+        │   ├── BaseController.py
+        │   ├── DataController.py      # File validation, path generation
+        │   ├── ProcessController.py   # URL/file loading, chunking
+        │   ├── ProjectController.py   # Project path management
+        │   └── NlpController.py       # Vector DB + RAG answer logic
+        ├── routes/
+        │   ├── base.py                # /api/v1/ (health check)
+        │   ├── data.py                # /api/v1/data/ (upload, url, process)
+        │   ├── nlp.py                 # /api/v1/nlp/ (index, search, answer)
+        │   └── schemes/
+        │       ├── data.py            # ProcessRequest, URLRequest
+        │       └── nlp.py             # PushRequest, SearchRequest
+        ├── models/
+        │   ├── BaseDataModel.py
+        │   ├── ProjectModel.py          # projects CRUD
+        │   ├── AssetModel.py            # assets CRUD
+        │   ├── ChunkModel.py            # chunks CRUD
+        │   └── db_schemes/
+        │       ├── RagApp/schemes/
+        │       │   ├── project.py       # projects table (PK: project_id INT)
+        │       │   ├── asset.py         # assets table (FK: asset_project_id)
+        │       │   ├── data_chunk.py    # chunks table (FK: chunk_project_id, chunk_asset_id)
+        │       │   └── __init__.py
+        │       └── __init__.py
+        ├── stores/
+        │   ├── llm/
+        │   │   ├── LLMinterface.py      # Abstract LLM base class
+        │   │   ├── LLMProviderFactory.py
+        │   │   ├── LLMEnums.py
+        │   │   ├── LLMErrors.py
+        │   │   ├── providers/
+        │   │   │   ├── OpenAiProvider.py
+        │   │   │   ├── CohereProvider.py
+        │   │   │   ├── OllamaProvider.py
+        │   │   │   ├── NvidiaProvider.py
+        │   │   │   ├── AnthropicProvider.py
+        │   │   │   └── GoogleProvider.py
+        │   │   └── templates/
+        │   │       ├── template_parser.py
+        │   │       └── locales/ (en, ar)
+        │   └── vectorDB/
+        │       ├── VectorDBInterFace.py
+        │       ├── VectorDBProviderFactory.py
+        │       └── providers/
+        │           └── QdrantDBProvider.py
+        └── assets/
+            ├── files/                   # Uploaded files stored here
+            ├── db/                      # Qdrant local storage
+            └── mini-rag-app.postman_collection.json
 ```
 
 ---
 
-## Getting Started
+## 🚀 Getting Started
 
 ### Prerequisites
 
-- **Python 3.14**
-- **[uv](https://docs.astral.sh/uv/)** package manager
-- **Docker** (to run MongoDB), or any reachable MongoDB instance
+- **Python 3.14** (see `.python-version`)
+- **PostgreSQL 16+** with `pgvector` extension
+- `uv` package manager
+- Qdrant (embedded if `VECTOR_DB_URL` not set)
 
-### 1. Clone and install
+### Option A: Local Setup
+
+#### 1. Clone the repository
 
 ```bash
-git clone <repository-url>
-cd ragloom
-
-# creates .venv and installs all dependencies from uv.lock
-uv sync
+git clone https://github.com/Amir-Hossni/RagForge.git
+cd Mini_Rag
 ```
 
-### 2. Configure environment variables
+#### 2. Create and activate a virtual environment
+
+```bash
+uv venv .venv
+source .venv/bin/activate
+```
+
+#### 3. Install dependencies
+
+```bash
+uv pip install -r requirements.txt
+```
+
+#### 4. Configure environment variables
 
 ```bash
 cp .env.example .env
+# Edit .env with your credentials
 ```
 
-Then edit `.env` and set your values (see [Configuration](#configuration)).
-
-### 3. Start MongoDB
+#### 5. Create and run database migrations
 
 ```bash
-cd Docker
-cp .env.example .env              # set MONGO_INITDB_ROOT_USERNAME / PASSWORD
-docker compose -f docker.compose.yaml up -d
+alembic upgrade head
 ```
 
-> If MongoDB authentication is enabled, include the credentials in `MONGODB_URI`, e.g. `mongodb://user:password@localhost:27017`.
-
-### 4. Run the API server
-
-From the project root (where `.env` lives):
+#### 6. Run the application
 
 ```bash
+uv run fastapi dev src/rag_app/main.py
+# or
 uv run uvicorn rag_app.main:app --reload --host 0.0.0.0 --port 5000
 ```
 
-Interactive API docs will be available at:
-
-- Swagger UI — http://localhost:5000/docs
-- ReDoc — http://localhost:5000/redoc
+The API will be available at `http://localhost:5000`.
 
 ---
 
-## Configuration
+### Option B: Docker Compose
 
-All settings are read from `.env` in the project root. Empty values are treated as unset.
+#### 1. Configure environment variables
 
-### Application & files
+```bash
+cd Docker
+cp .env.example .env
+# Edit .env with your credentials
+```
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `APP_NAME` | Application name | `"RagLoom"` |
-| `APP_VERSION` | Application version | `"0.1"` |
-| `FILE_ALLOWED_TYPES` | Allowed upload MIME types | `["text/plain", "application/pdf", "text/markdown", "application/epub+zip"]` |
-| `FILE_MAX_SIZE` | Max upload / URL content size in **MB** | `10` |
-| `FILE_DEFAULT_CHUNK_SIZE` | Read buffer size when saving uploads (bytes) | `512000` |
+#### 2. Start the services
 
-### Database
+```bash
+docker compose -f docker.compose.yaml up -d pgvector
+```
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `MONGODB_URI` | MongoDB connection string | `"mongodb://localhost:27017"` |
-| `MONGODB_DATABASE` | Database name | `"mini_rag"` |
-
-### LLM providers
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `GENERATION_BACKEND` | Provider for text generation | `OPENAI`, `COHERE`, `GOOGLE`, `NVIDIA`, `OLLAMA` or `ANTHROPIC` |
-| `EMBEDDING_BACKEND` | Provider for embeddings | `OPENAI`, `COHERE`, `GOOGLE`, `NVIDIA` or `OLLAMA` (Anthropic has no embeddings API) |
-| `OPENAI_API_KEY` | OpenAI API key | |
-| `OPENAI_API_URL` | Optional custom base URL (OpenAI-compatible servers) | |
-| `COHERE_API_KEY` | Cohere API key | |
-| `GOOGLE_API_KEY` | Google Gemini API key | |
-| `ANTHROPIC_API_KEY` | Anthropic API key | |
-| `NVIDIA_API_KEY` | NVIDIA NIM API key | |
-| `NVIDIA_API_URL` | NVIDIA NIM endpoint | `https://integrate.api.nvidia.com/v1` |
-| `OLLAMA_API_URL` | Local Ollama server (no API key needed) | `http://localhost:11434` |
-| `GENERATION_MODEL_ID` | Generation model name | |
-| `EMBEDDING_MODEL_ID` | Embedding model name | |
-| `EMBEDDING_MODEL_SIZE` | Embedding vector dimension | `1024` |
-| `INPUT_DEFAULT_MAX_CHARACTERS` | Max characters per text sent for **embedding** (generation prompts are never truncated) | `1024` |
-| `GENERATION_DEFAULT_MAX_TOKENS` | Default max output tokens | `200` |
-| `GENERATION_DEFAULT_TEMPERATURE` | Default temperature | `0.7` |
-
-> **Provider notes**
-> - The factory fails at **startup** with a clear error if the provider name is unknown or its API key is missing.
-> - **Anthropic** has no embeddings API, so it can only be used as `GENERATION_BACKEND`. The current Anthropic SDK no longer exposes sampling parameters, so `GENERATION_DEFAULT_TEMPERATURE` is ignored for it.
-> - **NVIDIA** and **Google** embedding models are asymmetric: documents and queries are embedded differently (handled automatically).
-> - Embeddings are sent in batches within each vendor's limit (OpenAI 2048, Google 100, Cohere 96, NVIDIA 50 texts per request).
-
-#### Adding a new LLM provider
-
-All shared logic (model checks, defaults, chat history, batching, truncation, vector validation) lives in `LLMinterface`. A new provider only writes the vendor-specific parts:
-
-1. Add the name to `LLMEnums` and a role enum (like `OpenAIEnums`) in `stores/llm/LLMEnums.py`.
-2. Create `stores/llm/providers/<Name>Provider.py`, subclass `LLMinterface`, set `PROVIDER_NAME` and `ROLES`, create the SDK client in `__init__`, and implement:
-   - `_generate_text(messages, max_output_tokens, temperature)` — call the vendor, return the text, raise `LLMProviderError` on failure.
-   - `_embed_text(texts, document_type)` — embed one batch, return the vectors, raise `EmbeddingError` on failure.
-3. Set `embedding_batch_size` if the vendor limits texts per request, and override `aclose()` if its client does not expose `close()`.
-4. Export it in `providers/__init__.py`, add a branch in `LLMProviderFactory`, and add its settings to `helper/config.py` and `.env.example`.
-
-### Vector database
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `VECTOR_DB_BACKEND` | Vector DB provider | `"QDRANT"` |
-| `VECTOR_DB_PATH` | Local storage folder name (under `assets/db/`) | `"qdrant_db"` |
-| `VECTOR_DB_DISTANCE_METRIC` | Similarity metric | `"cosine"` or `"dot"` |
-
-### URL loader
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `URL_REQUEST_TIMEOUT` | Request timeout in seconds | `15` |
-| `URL_MAX_REDIRECTS` | Max redirects to follow (each hop is validated) | `5` |
+> **Note:** `docker compose -f docker.compose.yaml up -d pgvector` starts only the PostgreSQL service, while `docker compose -f docker.compose.yaml up -d` starts all services.
 
 ---
 
-## API Reference
+## ⚙️ Configuration
 
-Base URL: `http://localhost:5000/api/v1`
+| Variable | Required | Example | Description |
+|----------|----------|---------|-------------|
+| `APP_NAME` | ✅ | `RagForge` | App name |
+| `APP_VERSION` | ✅ | `0.1` | App version |
+| `POSTGRES_USERNAME` | ✅ | `postgres` | DB user |
+| `POSTGRES_PASSWORD` | ✅ | `secret` | DB password |
+| `POSTGRES_HOST` | ✅ | `localhost` | DB host |
+| `POSTGRES_PORT` | ✅ | `5432` | DB port |
+| `POSTGRES_MAIN_DATABASE` | ✅ | `ragforge` | DB name |
+| `GENERATION_BACKEND` | ✅ | `openai` | `openai`, `cohere`, `google`, `nvidia`, `ollama`, `anthropic` |
+| `EMBEDDING_BACKEND` | ✅ | `openai` | Same as above |
+| `GENERATION_MODEL_ID` | ✅ | `gpt-4o-mini` | Model name for generation |
+| `EMBEDDING_MODEL_ID` | ✅ | `text-embedding-3-small` | Model name for embeddings |
+| `EMBEDDING_MODEL_SIZE` | ✅ | `1536` | Embedding vector size |
+| `OLLAMA_API_URL` | ⚠️ | `http://localhost:11434` | Ollama server URL |
+| `VECTOR_DB_BACKEND` | ✅ | `qdrant` | `qdrant` |
+| `VECTOR_DB_PATH` | ✅ | `qdrant_db` | Local storage path |
+| `FILE_ALLOWED_TYPES` | ✅ | `["text/plain", "application/pdf"]` | Allowed MIME types |
+| `FILE_MAX_SIZE` | ✅ | `100` | Max file size in MB |
+| `FILE_DEFAULT_CHUNK_SIZE` | ✅ | `512000` | Chunk size in characters |
+| `URL_REQUEST_TIMEOUT` | ✅ | `15` | URL fetch timeout (seconds) |
+| `URL_MAX_REDIRECTS` | ✅ | `5` | URL fetch max redirects |
+| `PRIMARY_LANGUAGE` | ✅ | `en` | Template language (`en`, `ar`) |
+| `DEFAULT_LANGUAGE` | ✅ | `en` | Fallback language |
 
-Every response carries a `signal` field describing the outcome. `project_id` must be **alphanumeric**; a project is created automatically on first use.
+---
 
-### Health
+## 🔌 API Reference
 
-```http
-GET /api/v1/
-```
+> Base URL: `http://localhost:8000/api/v1`
 
+### 🔷 Data Endpoints
+
+#### `POST /api/v1/data/upload/{project_id}`
+
+Upload a file (local) to a project.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `project_id` | int | Positive integer, auto-increment PK in `projects` table |
+| `file` | UploadFile | File to upload |
+
+**Response:**
 ```json
-{ "app_name": "RagLoom", "app_version": "0.1" }
+{
+  "signal": "FILE_UPLOAD_SUCCESS",
+  "file_id": "1"
+}
 ```
 
-### Upload a file
+#### `POST /api/v1/data/upload-url/{project_id}`
 
-```http
-POST /api/v1/data/upload/{project_id}
-Content-Type: multipart/form-data
-```
+Register a public URL as an asset in a project.
 
-```bash
-curl -X POST "http://localhost:5000/api/v1/data/upload/project1" \
-     -F "file=@./document.pdf"
-```
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `project_id` | int | Positive integer |
+| `url_request` | URLRequest | `{ "url": "https://example.com" }` |
 
+**Response:**
 ```json
-{ "signal": "file_upload_success", "file_id": "6ac2825eee10bcf8b9b9578a" }
+{
+  "signal": "URL_ADDED_SUCCESS",
+  "file_id": "1"
+}
 ```
 
-### Add a URL
+#### `POST /api/v1/data/process/{project_id}`
 
-The URL is stored as an asset only. Its content is fetched **in memory** during processing and never written to disk.
+Process all assets in a project: extract text, chunk, and store.
 
-```http
-POST /api/v1/data/upload-url/{project_id}
-Content-Type: application/json
-```
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `project_id` | int | Positive integer |
+| `process_request` | ProcessRequest | `{ "chunk_size": 100, "overlap_size": 20, "do_reset": 0 }` |
 
-```bash
-curl -X POST "http://localhost:5000/api/v1/data/upload-url/project1" \
-     -H "Content-Type: application/json" \
-     -d '{"url": "https://docs.python.org/3/tutorial/introduction.html"}'
-```
-
+**Response:**
 ```json
-{ "signal": "url_added_success", "file_id": "6ac2825eee10bcf8b9b95795" }
+{
+  "signal": "PROCESSING_SUCCESS",
+  "inserted_chunks": 42,
+  "processed_files": 2
+}
 ```
 
-### Process assets into chunks
+### 🔷 NLP Endpoints
 
-```http
-POST /api/v1/data/process/{project_id}
-Content-Type: application/json
-```
+#### `POST /api/v1/nlp/index/push/{project_id}` ⏳ Planned
 
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `file_id` | string | `null` | Asset id (from upload) or asset name. Omit to process **all** project assets |
-| `chunk_size` | int | `100` | Max characters per chunk (`> 0`) |
-| `overlap_size` | int | `20` | Overlapping characters between chunks (`< chunk_size`) |
-| `do_reset` | int | `0` | `1` deletes **all** of the project's chunks before processing |
+Index chunks into the vector database.
 
-```bash
-curl -X POST "http://localhost:5000/api/v1/data/process/project1" \
-     -H "Content-Type: application/json" \
-     -d '{"chunk_size": 500, "overlap_size": 50, "do_reset": 1}'
-```
+#### `POST /api/v1/nlp/index/search/{project_id}` ⏳ Planned
 
-```json
-{ "signal": "processing_success", "inserted_chunks": 61, "processed_files": 3 }
-```
+Semantic search.
 
-**Processing behavior**
+#### `POST /api/v1/nlp/index/answer/{project_id}` ⏳ Planned
 
-- **Idempotent re-processing** — processing an asset again **replaces** its previous chunks instead of duplicating them, so you can re-run with a different `chunk_size` without `do_reset`.
-- **Safe on failure** — an asset's old chunks are removed only after its new chunks were generated successfully. If an asset fails, its previous chunks are kept.
-- **Partial success** — assets that fail (unreachable URL, unsupported or corrupted file) are skipped and logged; the request fails only if **no** asset could be processed.
-- **`do_reset=1`** clears the whole project first, so chunks of assets that fail in that run are not restored.
+RAG answer generation.
 
-### Response signals
+### 🔷 Error Signals
 
 | Signal | Meaning |
 |--------|---------|
-| `file_upload_success` | File stored and registered as an asset |
-| `file_type_not_supported` | MIME type not in `FILE_ALLOWED_TYPES` |
-| `file_size_exceeded` | File larger than `FILE_MAX_SIZE` |
-| `file_empty` | Uploaded file is empty |
-| `file_uploaded_failed` | Error while writing the file |
-| `url_added_success` | URL registered as an asset |
-| `url_already_exists` | URL already registered in this project (existing id returned) |
-| `url_not_allowed` | URL rejected (non-public address or unresolvable host) |
-| `processing_success` | Chunks created and stored |
-| `processing_failed` | No asset could be processed |
-| `not_found_files` | Project has no assets |
-| `no_file_found_with_this_id` | `file_id` does not exist in this project |
-| `project_id_must_be_alphanumeric` | Invalid `project_id` |
+| `FILE_TYPE_NOT_SUPPORTED` | MIME type not allowed |
+| `FILE_EMPTY` | File is empty |
+| `FILE_SIZE_EXCEEDED` | File exceeds `FILE_MAX_SIZE` |
+| `FILE_UPLOADED_SUCCESS` | File successfully uploaded |
+| `FILE_UPLOAD_FAILED` | Error while writing file |
+| `URL_ADDED_SUCCESS` | URL registered as asset |
+| `URL_ALREADY_EXISTS` | URL already registered in project |
+| `URL_NOT_ALLOWED` | URL rejected (non-public or unresolvable host) |
+| `PROCESSING_SUCCESS` | Chunks created and stored |
+| `PROCESSING_FAILED` | No asset could be processed |
+| `PROJECT_ID_INVALID` | `project_id` is not a positive integer |
+| `NO_FILES_ERROR` | Project has no assets |
+| `NOT_FOUND_FILES` | Asset not found |
 
-A Postman collection is available at [`src/rag_app/assets/mini-rag-app.postman_collection.json`](src/rag_app/assets/mini-rag-app.postman_collection.json).
+A Postman collection is available at:  
+`src/rag_app/assets/mini-rag-app.postman_collection.json`
 
 ---
 
-## Supported Sources
+## 📚 Supported Sources
 
 | Source | Formats | `ProcessController` method | Notes |
-|--------|---------|--------|-------|
+|--------|---------|----------------------------|-------|
 | Local file | `.txt`, `.md` | `load_text_file` | UTF-8. Extensions are case-insensitive (`.PDF` = `.pdf`) |
-| Local file | `.pdf`, `.epub` | `load_pymupdf_file` (PyMuPDF) | One document per page with page metadata |
-| URL | HTML pages | `load_html_content` (trafilatura) | Main content only (menus, footers and ads are removed); title, author, date and site name kept as metadata |
+| Local file | `.pdf`, `.epub` | `load_pymupdf_file` (PyMuPDF) | One document per page with metadata |
+| URL | HTML pages | `load_html_content` (trafilatura) | Main content only (menus, footers, ads removed); title, author, date, site name kept |
 | URL | PDF | `load_pdf_content` (PyMuPDF) | Parsed from memory |
-| URL | Plain text / Markdown | `load_text_content` | Decoded using the response charset |
+| URL | Plain text / Markdown | `load_text_content` | Decoded using response charset |
 
-> **Note:** some clients upload `.md` files as `application/octet-stream`. Add that MIME type to `FILE_ALLOWED_TYPES` if needed.
+> **Note:** Some clients upload `.md` files as `application/octet-stream`. Add that MIME type to `FILE_ALLOWED_TYPES` if needed.
 > Pages rendered entirely by JavaScript (SPAs) are not supported yet.
 
 ---
 
-## Security
+## 🔒 Security
 
 User-supplied URLs are a common **SSRF** (Server-Side Request Forgery) vector. `ProcessController.validate_public_url` and `fetch_url` apply these protections:
 
 - Only `http` and `https` schemes are accepted.
-- The hostname is resolved and **every** resolved IP must be public — loopback, private, link-local (including cloud metadata `169.254.169.254`) and reserved ranges are rejected, as well as tricks like decimal IPs (`http://2130706433`).
-- Redirects are followed manually and **each hop is re-validated**.
-- Response size is limited by `FILE_MAX_SIZE` while streaming, and requests are bounded by a timeout.
-
-> Known limitation: the connection is not pinned to the validated IP, so a DNS-rebinding attack remains theoretically possible. Pinning the IP in the HTTP transport is on the roadmap.
+- The hostname is resolved, and **every** resolved IP must be public. Loopback, private, link-local (including cloud metadata `169.254.169.254`), and reserved ranges are rejected. Tricks like decimal IPs (`http://2130706433`) are also rejected.
+- Redirects are followed manually, and **each hop is re-validated**.
+- Response size is limited by `FILE_MAX_SIZE` while streaming. Requests are bounded by a timeout.
+- **Known limitation:** The connection is not pinned to the validated IP, so a DNS-rebinding attack remains theoretically possible. Pinning the IP in the HTTP transport is planned.
 
 ---
 
-## Roadmap
+## 🗺️ Roadmap
 
-- [ ] Wire LLM and vector DB providers into the application lifespan
-- [ ] Index chunks into Qdrant (`/nlp/index/push/{project_id}`)
+- [x] **Already Implemented:** All 6 LLM providers (`OpenAI`, `Cohere`, `Google`, `NVIDIA`, `Ollama`, `Anthropic`)
+- [x] **Already Implemented:** Qdrant vector DB provider
+- [x] **Already Implemented:** `/api/v1/data/upload/{project_id}` endpoint
+- [x] **Already Implemented:** `/api/v1/data/upload-url/{project_id}` endpoint
+- [x] **Already Implemented:** `/api/v1/data/process/{project_id}` endpoint
+- [x] **Already Implemented:** `/api/v1/nlp/index/push/{project_id}` endpoint
 - [ ] Semantic search endpoint (`/nlp/index/search/{project_id}`)
-- [ ] RAG answer endpoint with prompt templates (`/nlp/index/answer/{project_id}`)
-- [ ] Remove a project's vectors when `do_reset=1`
+- [ ] RAG answer generation endpoint (`/nlp/index/answer/{project_id}`)
 - [ ] More loaders: DOCX, CSV / JSON, YouTube transcripts, OCR for scanned PDFs
-- [ ] Encoding auto-detection for non UTF-8 text files
+- [ ] Encoding auto-detection for non-UTF-8 text files
 - [ ] Pin URL connections to the validated IP (DNS-rebinding protection)
-- [ ] Create MongoDB indexes once at startup (indexes are currently created only when a collection is first created)
+- [ ] Create PostgreSQL indexes once at startup (indexes are currently created only when a collection is first created)
 - [ ] Automated tests and CI
 - [ ] Dockerfile for the API service
 
 ---
 
-## License
+## 📜 License
 
 License to be defined.
 
@@ -438,5 +456,9 @@ License to be defined.
 <div align="center">
 
 Made by **Amir Hossni**
+
+[![GitHub](https://img.shields.io/badge/GitHub-Amir--Hossni-181717?logo=github)](https://github.com/Amir-Hossni)
+[![Python](https://img.shields.io/badge/Python-3.14-3776AB?logo=python&logoColor=white)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.141-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 
 </div>

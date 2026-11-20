@@ -4,6 +4,7 @@
 
 # Environment variables / secrets
 .env
+alembic.ini
 
 # Python cache
 __pycache__/

@@ -79,3 +79,9 @@ class OllamaProvider(LLMinterface):
             raise EmbeddingError("Ollama returned no embeddings")
         
         return [list(vector) for vector in response.embeddings]
+    
+    def construct_prompt(self, prompt: str, role: str):
+        return{
+            "role": role,
+            "content": prompt
+        }

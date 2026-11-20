@@ -27,19 +27,26 @@ class DataController(BaseController):
         return True , ResponseSignal.FILE_VALIDATED_SUCCESS.value
      
     def generate_unique_path(self, original_file_name: str, project_id: str):
-         
+        
+        import os
+        
         random_key = self.generate_random_string()
         project_path = ProjectController().get_project_path(project_id=project_id)
         
-        
         cleaned_file_name = self.get_clean_filename(original_file_name=original_file_name)
-        new_file_path = project_path / f"{random_key}_{cleaned_file_name}"   
         
-        while new_file_path.exists():
-            random_key = self.generate_random_string()
+        while True:
             new_file_path = project_path / f"{random_key}_{cleaned_file_name}"
-
-        return new_file_path , random_key + "_" + cleaned_file_name
+            
+            # Atomically create file (os.O_CREAT | os.O_EXCL fails if file exists)
+            try:
+                fd = os.open(new_file_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
+                os.close(fd)
+                break
+            except FileExistsError:
+                random_key = self.generate_random_string()
+        
+        return new_file_path, random_key + "_" + cleaned_file_name
     
     
          

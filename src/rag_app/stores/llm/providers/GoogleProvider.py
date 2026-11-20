@@ -96,6 +96,12 @@ class GoogleProvider(LLMinterface):
         
         return [list(embedding.values) for embedding in response.embeddings]
     
+    def construct_prompt(self, prompt: str, role: str):
+        return{
+            "role": role,
+            "content": prompt
+        }
+    
     async def aclose(self):
         # the async client of google-genai closes with aclose()
         await self.client.aio.aclose()

@@ -1,9 +1,7 @@
 from typing import List
 
-
 from .BaseController import BaseController
-from .ProjectController import ProjectController
-from ..models import Project, DataChunk, Asset
+from ..models import Project, DataChunk
 from ..stores.llm import DocumentTypeEnums
 
 
@@ -114,7 +112,7 @@ class NLPController(BaseController):
         document_prompt = "\n".join([
             self.templateparser.get("rag", "document_prompt", {
                     "doc_num": idx + 1,
-                    "chunk_text": doc.text
+                    "chunk_text": self.templateparser.process_text(doc.text)
                 })
             
             for idx, doc in enumerate(retrieve_documents)
